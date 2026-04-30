@@ -24,27 +24,49 @@ export default function AuthForm({ type }: Props) {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        // 🔐 LOGIN
+        const { error: loginError } = await supabase.auth.signInWithPassword({
           email,
           password,
         })
 
-        if (error) throw error
+        if (loginError) throw loginError
 
-        router.push("/dashboard")
+        // 👇 USER ID авах
+        const { data: userData } = await supabase.auth.getUser()
+        const userId = userData.user?.id
+
+        // 👇 SESSION-д хадгалах
+        if (userId) {
+          sessionStorage.setItem("user_id", userId)
+          console.log("User ID saved to sessionStorage:", userId)
+        }
+
+        // 👇 MODE шалгах
+        const mode = sessionStorage.getItem("mode")
+
+        if (mode === "client") {
+          sessionStorage.removeItem("mode")
+          router.push("/client")
+        } else {
+          router.push("/dashboard")
+        }
+
       } else {
-        const { error } = await supabase.auth.signUp({
+        // 📝 REGISTER
+        const { error: registerError } = await supabase.auth.signUp({
           email,
           password,
         })
 
-        if (error) throw error
+        if (registerError) throw registerError
 
         alert("Бүртгэл амжилттай! Email баталгаажуулна уу.")
         router.push("/login")
       }
+
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "An error occurred")
+      setError(err instanceof Error ? err.message : "Алдаа гарлаа")
     } finally {
       setLoading(false)
     }

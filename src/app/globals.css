@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+/* 🌈 Light gradient background */
+body {
+  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  color: #0f172a;
+}
+
+/* glow effect */
+.glow-light {
+  box-shadow: 0 10px 40px rgba(99, 102, 241, 0.25);
+}
+
+/* glass card */
+.glass-light {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.3);
+}

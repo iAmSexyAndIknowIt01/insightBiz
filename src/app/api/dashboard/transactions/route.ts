@@ -59,7 +59,62 @@ export async function GET(req: Request) {
     if (error) throw error
 
     return NextResponse.json(data)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (err) {
     return NextResponse.json({ error: "Server error" }, { status: 500 })
   }
+}
+
+// ➕ ADD
+export async function POST(req: Request) {
+  const body = await req.json()
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .insert([body])
+    .select()
+    .single()
+
+  if (error) {
+    return NextResponse.json({ error }, { status: 500 })
+  }
+
+  return NextResponse.json(data)
+}
+
+// ✏️ EDIT
+export async function PUT(req: Request) {
+  const body = await req.json()
+
+  const { id, ...rest } = body
+
+  const { data, error } = await supabase
+    .from("transactions")
+    .update(rest)
+    .eq("id", id)
+    .select()
+    .single()
+
+  if (error) {
+    return NextResponse.json({ error }, { status: 500 })
+  }
+
+  return NextResponse.json(data)
+}
+
+// 🗑 DELETE
+export async function DELETE(req: Request) {
+  const { searchParams } = new URL(req.url)
+  const id = searchParams.get("id")
+
+  const { error } = await supabase
+    .from("transactions")
+    .delete()
+    .eq("id", id)
+
+  if (error) {
+    return NextResponse.json({ error }, { status: 500 })
+  }
+
+  return NextResponse.json({ success: true })
 }

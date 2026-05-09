@@ -3,19 +3,14 @@
 import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 
-type Transaction = {
-  id: string
-  amount: number
-  type: "income" | "expense"
-  note: string
-  transaction_date: string
-}
-
 export default function Transactions() {
-  const [transactions, setTransactions] = useState<Transaction[]>([])
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [transactions, setTransactions] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
-  // 👉 filters
+  const [userId, setUserId] = useState("")
+
+  // filters
   const [type, setType] = useState("")
   const [search, setSearch] = useState("")
   const [from, setFrom] = useState("")
@@ -23,16 +18,38 @@ export default function Transactions() {
   const [min, setMin] = useState("")
   const [max, setMax] = useState("")
 
-  const fetchData = async () => {
+  // modal
+  const [open, setOpen] = useState(false)
+  const [editId, setEditId] = useState<string | null>(null)
+
+  const [form, setForm] = useState({
+    amount: "",
+    type: "income",
+    note: "",
+    transaction_date: "",
+  })
+
+  useEffect(() => {
+    const init = async () => {
+      const { data } = await supabase.auth.getUser()
+      if (data.user) {
+        setUserId(data.user.id)
+        // eslint-disable-next-line react-hooks/immutability
+        fetchData(data.user.id)
+      }
+    }
+
+    init()
+  }, [])
+
+  const fetchData = async (uid?: string) => {
+    const id = uid || userId
+    if (!id) return
+
     setLoading(true)
 
-    const { data: userData } = await supabase.auth.getUser()
-    const userId = userData.user?.id
-
-    if (!userId) return
-
     const params = new URLSearchParams({
-      user_id: userId,
+      user_id: id,
       ...(type && { type }),
       ...(search && { search }),
       ...(from && { from }),
@@ -48,120 +65,150 @@ export default function Transactions() {
     setLoading(false)
   }
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+  // ➕ ADD / EDIT SUBMIT
+  const handleSubmit = async () => {
+    const payload = {
+      ...form,
+      amount: Number(form.amount),
+      user_id: userId,
+    }
+
+    if (editId) {
+      await fetch("/api/dashboard/transactions", {
+        method: "PUT",
+        body: JSON.stringify({ id: editId, ...payload }),
+      })
+    } else {
+      await fetch("/api/dashboard/transactions", {
+        method: "POST",
+        body: JSON.stringify(payload),
+      })
+    }
+
+    setOpen(false)
+    setEditId(null)
+    setForm({
+      amount: "",
+      type: "income",
+      note: "",
+      transaction_date: "",
+    })
+
     fetchData()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }
+
+  // ✏️ EDIT
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const handleEdit = (t: any) => {
+    setEditId(t.id)
+    setForm({
+      amount: t.amount,
+      type: t.type,
+      note: t.note,
+      transaction_date: t.transaction_date,
+    })
+    setOpen(true)
+  }
+
+  // 🗑 DELETE
+  const handleDelete = async (id: string) => {
+    if (!confirm("Устгах уу?")) return
+
+    await fetch(`/api/dashboard/transactions?id=${id}`, {
+      method: "DELETE",
+    })
+
+    fetchData()
+  }
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
 
       <h1 className="text-2xl font-bold mb-6">Transactions</h1>
 
-      {/* 🔥 FILTER UI */}
-      <div className="bg-white/60 backdrop-blur border rounded-2xl p-4 mb-6 shadow">
+      {/* FILTER */}
+      <div className="bg-white/60 border p-4 rounded-xl mb-6">
 
-        <div className="grid md:grid-cols-6 gap-3">
+        <div className="grid md:grid-cols-6 gap-2">
 
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="px-3 py-2 border rounded-xl"
-          >
-            <option value="">Бүгд</option>
+          <select value={type} onChange={(e) => setType(e.target.value)} className="border p-2 rounded">
+            <option value="">All</option>
             <option value="income">Орлого</option>
             <option value="expense">Зарлага</option>
           </select>
 
-          <input
-            placeholder="Тайлбар хайх..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="px-3 py-2 border rounded-xl"
-          />
+          <input placeholder="Search" value={search} onChange={(e) => setSearch(e.target.value)} className="border p-2 rounded" />
 
-          <input
-            type="date"
-            value={from}
-            onChange={(e) => setFrom(e.target.value)}
-            className="px-3 py-2 border rounded-xl"
-          />
+          <input type="date" value={from} onChange={(e) => setFrom(e.target.value)} className="border p-2 rounded" />
+          <input type="date" value={to} onChange={(e) => setTo(e.target.value)} className="border p-2 rounded" />
 
-          <input
-            type="date"
-            value={to}
-            onChange={(e) => setTo(e.target.value)}
-            className="px-3 py-2 border rounded-xl"
-          />
-
-          <input
-            placeholder="Мин дүн"
-            value={min}
-            onChange={(e) => setMin(e.target.value)}
-            className="px-3 py-2 border rounded-xl"
-          />
-
-          <input
-            placeholder="Макс дүн"
-            value={max}
-            onChange={(e) => setMax(e.target.value)}
-            className="px-3 py-2 border rounded-xl"
-          />
+          <input placeholder="Min" value={min} onChange={(e) => setMin(e.target.value)} className="border p-2 rounded" />
+          <input placeholder="Max" value={max} onChange={(e) => setMax(e.target.value)} className="border p-2 rounded" />
 
         </div>
 
-        <button
-          onClick={fetchData}
-          className="mt-4 bg-indigo-600 text-white px-4 py-2 rounded-xl"
-        >
-          Хайх
-        </button>
+        <div className="flex gap-2 mt-3">
+          <button onClick={() => fetchData()} className="bg-indigo-600 text-white px-4 py-2 rounded">
+            Хайх
+          </button>
+
+          <button
+            onClick={() => {
+              setType("")
+              setSearch("")
+              setFrom("")
+              setTo("")
+              setMin("")
+              setMax("")
+              fetchData()
+            }}
+            className="border px-4 py-2 rounded"
+          >
+            Reset
+          </button>
+
+          <button
+            onClick={() => setOpen(true)}
+            className="ml-auto bg-green-600 text-white px-4 py-2 rounded"
+          >
+            + Add
+          </button>
+        </div>
 
       </div>
 
       {/* TABLE */}
-      <div className="bg-white/60 backdrop-blur border rounded-2xl p-6 shadow">
+      <div className="bg-white/60 p-4 rounded-xl">
 
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          <table className="w-full text-left">
-            <thead className="text-gray-500 text-sm border-b">
-              <tr>
-                <th className="py-2">Огноо</th>
+        {loading ? "Loading..." : (
+          <table className="w-full">
+            <thead>
+              <tr className="text-left border-b">
+                <th>Огноо</th>
                 <th>Төрөл</th>
                 <th>Дүн</th>
-                <th>Тайлбар</th>
+                <th>Note</th>
+                <th></th>
               </tr>
             </thead>
 
             <tbody>
               {transactions.map((t) => (
-                <tr key={t.id} className="border-b hover:bg-gray-50">
-                  <td className="py-2">
-                    {new Date(t.transaction_date).toLocaleDateString()}
+                <tr key={t.id} className="border-b">
+
+                  <td>{new Date(t.transaction_date).toLocaleDateString()}</td>
+
+                  <td>{t.type}</td>
+
+                  <td>₮{t.amount}</td>
+
+                  <td>{t.note}</td>
+
+                  <td className="flex gap-2">
+                    <button onClick={() => handleEdit(t)} className="text-blue-500">Edit</button>
+                    <button onClick={() => handleDelete(t.id)} className="text-red-500">Delete</button>
                   </td>
 
-                  <td>
-                    <span
-                      className={`px-2 py-1 rounded text-xs ${
-                        t.type === "income"
-                          ? "bg-green-100 text-green-600"
-                          : "bg-red-100 text-red-600"
-                      }`}
-                    >
-                      {t.type === "income" ? "Орлого" : "Зарлага"}
-                    </span>
-                  </td>
-
-                  <td className="font-semibold">
-                    ₮{t.amount.toLocaleString()}
-                  </td>
-
-                  <td className="text-gray-500">
-                    {t.note || "-"}
-                  </td>
                 </tr>
               ))}
             </tbody>
@@ -169,6 +216,61 @@ export default function Transactions() {
         )}
 
       </div>
+
+      {/* MODAL */}
+      {open && (
+        <div className="fixed inset-0 bg-black/30 flex items-center justify-center">
+
+          <div className="bg-white p-6 rounded-xl w-full max-w-md">
+
+            <h2 className="text-xl font-bold mb-4">
+              {editId ? "Edit" : "Add"} Transaction
+            </h2>
+
+            <input
+              placeholder="Amount"
+              value={form.amount}
+              onChange={(e) => setForm({ ...form, amount: e.target.value })}
+              className="w-full border p-2 mb-3 rounded"
+            />
+
+            <select
+              value={form.type}
+              onChange={(e) => setForm({ ...form, type: e.target.value })}
+              className="w-full border p-2 mb-3 rounded"
+            >
+              <option value="income">Орлого</option>
+              <option value="expense">Зарлага</option>
+            </select>
+
+            <input
+              placeholder="Note"
+              value={form.note}
+              onChange={(e) => setForm({ ...form, note: e.target.value })}
+              className="w-full border p-2 mb-3 rounded"
+            />
+
+            <input
+              type="date"
+              value={form.transaction_date}
+              onChange={(e) => setForm({ ...form, transaction_date: e.target.value })}
+              className="w-full border p-2 mb-3 rounded"
+            />
+
+            <div className="flex gap-2">
+              <button onClick={handleSubmit} className="bg-indigo-600 text-white px-4 py-2 rounded">
+                Save
+              </button>
+
+              <button onClick={() => setOpen(false)} className="border px-4 py-2 rounded">
+                Cancel
+              </button>
+            </div>
+
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 
 export default function Transactions() {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [transactions, setTransactions] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -29,20 +28,45 @@ export default function Transactions() {
     transaction_date: "",
   })
 
+  // 👉 current month helper
+  const getCurrentMonthRange = () => {
+    const now = new Date()
+
+    const start = new Date(now.getFullYear(), now.getMonth(), 1)
+      .toISOString()
+      .split("T")[0]
+
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      .toISOString()
+      .split("T")[0]
+
+    return { start, end }
+  }
+
+  // 🚀 INIT (default = current month)
   useEffect(() => {
     const init = async () => {
       const { data } = await supabase.auth.getUser()
+
       if (data.user) {
         setUserId(data.user.id)
-        // eslint-disable-next-line react-hooks/immutability
-        fetchData(data.user.id)
+
+        const { start, end } = getCurrentMonthRange()
+        setFrom(start)
+        setTo(end)
+
+        fetchData(data.user.id, start, end)
       }
     }
 
     init()
   }, [])
 
-  const fetchData = async (uid?: string) => {
+  const fetchData = async (
+    uid?: string,
+    customFrom?: string,
+    customTo?: string
+  ) => {
     const id = uid || userId
     if (!id) return
 
@@ -52,8 +76,8 @@ export default function Transactions() {
       user_id: id,
       ...(type && { type }),
       ...(search && { search }),
-      ...(from && { from }),
-      ...(to && { to }),
+      ...(customFrom || from ? { from: customFrom || from } : {}),
+      ...(customTo || to ? { to: customTo || to } : {}),
       ...(min && { min }),
       ...(max && { max }),
     })
@@ -65,7 +89,26 @@ export default function Transactions() {
     setLoading(false)
   }
 
-  // ➕ ADD / EDIT SUBMIT
+  // 🔍 SEARCH
+  const handleSearch = () => {
+    fetchData()
+  }
+
+  // 🔄 RESET → буцаад current month
+  const handleReset = () => {
+    const { start, end } = getCurrentMonthRange()
+
+    setType("")
+    setSearch("")
+    setMin("")
+    setMax("")
+    setFrom(start)
+    setTo(end)
+
+    fetchData(userId, start, end)
+  }
+
+  // ➕ ADD / EDIT
   const handleSubmit = async () => {
     const payload = {
       ...form,
@@ -87,6 +130,7 @@ export default function Transactions() {
 
     setOpen(false)
     setEditId(null)
+
     setForm({
       amount: "",
       type: "income",
@@ -98,7 +142,6 @@ export default function Transactions() {
   }
 
   // ✏️ EDIT
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleEdit = (t: any) => {
     setEditId(t.id)
     setForm({
@@ -148,22 +191,11 @@ export default function Transactions() {
         </div>
 
         <div className="flex gap-2 mt-3">
-          <button onClick={() => fetchData()} className="bg-indigo-600 text-white px-4 py-2 rounded">
+          <button onClick={handleSearch} className="bg-indigo-600 text-white px-4 py-2 rounded">
             Хайх
           </button>
 
-          <button
-            onClick={() => {
-              setType("")
-              setSearch("")
-              setFrom("")
-              setTo("")
-              setMin("")
-              setMax("")
-              fetchData()
-            }}
-            className="border px-4 py-2 rounded"
-          >
+          <button onClick={handleReset} className="border px-4 py-2 rounded">
             Reset
           </button>
 
@@ -195,20 +227,14 @@ export default function Transactions() {
             <tbody>
               {transactions.map((t) => (
                 <tr key={t.id} className="border-b">
-
                   <td>{new Date(t.transaction_date).toLocaleDateString()}</td>
-
                   <td>{t.type}</td>
-
-                  <td>₮{t.amount}</td>
-
+                  <td>₮{t.amount.toLocaleString()}</td>
                   <td>{t.note}</td>
-
                   <td className="flex gap-2">
                     <button onClick={() => handleEdit(t)} className="text-blue-500">Edit</button>
                     <button onClick={() => handleDelete(t.id)} className="text-red-500">Delete</button>
                   </td>
-
                 </tr>
               ))}
             </tbody>

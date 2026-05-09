@@ -6,6 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
+// 📥 GET (with default current month filter)
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
@@ -22,26 +23,29 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "user_id required" }, { status: 400 })
     }
 
+    // ✅ default current month
+    const now = new Date()
+
+    const defaultFrom = new Date(now.getFullYear(), now.getMonth(), 1)
+    const defaultTo = new Date(now.getFullYear(), now.getMonth() + 1, 0)
+
     let query = supabase
       .from("transactions")
       .select("*")
       .eq("user_id", userId)
 
-    // 👉 FILTERS
+    // ✅ DATE FILTER (fallback → current month)
+    query = query
+      .gte("transaction_date", from || defaultFrom.toISOString())
+      .lte("transaction_date", to || defaultTo.toISOString())
+
+    // ✅ OTHER FILTERS
     if (type) {
       query = query.eq("type", type)
     }
 
     if (search) {
       query = query.ilike("note", `%${search}%`)
-    }
-
-    if (from) {
-      query = query.gte("transaction_date", from)
-    }
-
-    if (to) {
-      query = query.lte("transaction_date", to)
     }
 
     if (min) {

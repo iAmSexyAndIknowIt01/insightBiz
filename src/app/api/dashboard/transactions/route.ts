@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-// 📥 GET (with default current month filter)
+// 📥 GET (filters + pagination + default current month)
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url)
@@ -19,19 +19,28 @@ export async function GET(req: Request) {
     const min = searchParams.get("min")
     const max = searchParams.get("max")
 
+    // ✅ pagination params
+    const page = Number(searchParams.get("page") || 1)
+    const limit = Number(searchParams.get("limit") || 20)
+
+    const fromRow = (page - 1) * limit
+    const toRow = fromRow + limit - 1
+
     if (!userId) {
-      return NextResponse.json({ error: "user_id required" }, { status: 400 })
+      return NextResponse.json(
+        { error: "user_id required" },
+        { status: 400 }
+      )
     }
 
     // ✅ default current month
     const now = new Date()
-
     const defaultFrom = new Date(now.getFullYear(), now.getMonth(), 1)
     const defaultTo = new Date(now.getFullYear(), now.getMonth() + 1, 0)
 
     let query = supabase
       .from("transactions")
-      .select("*")
+      .select("*", { count: "exact" }) // 👈 total count
       .eq("user_id", userId)
 
     // ✅ DATE FILTER (fallback → current month)
@@ -40,32 +49,28 @@ export async function GET(req: Request) {
       .lte("transaction_date", to || defaultTo.toISOString())
 
     // ✅ OTHER FILTERS
-    if (type) {
-      query = query.eq("type", type)
-    }
+    if (type) query = query.eq("type", type)
+    if (search) query = query.ilike("note", `%${search}%`)
+    if (min) query = query.gte("amount", Number(min))
+    if (max) query = query.lte("amount", Number(max))
 
-    if (search) {
-      query = query.ilike("note", `%${search}%`)
-    }
-
-    if (min) {
-      query = query.gte("amount", Number(min))
-    }
-
-    if (max) {
-      query = query.lte("amount", Number(max))
-    }
-
-    const { data, error } = await query.order("transaction_date", {
-      ascending: false,
-    })
+    const { data, error, count } = await query
+      .order("transaction_date", { ascending: false })
+      .range(fromRow, toRow) // 👈 pagination core
 
     if (error) throw error
 
-    return NextResponse.json(data)
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    return NextResponse.json({
+      data,
+      total: count,
+      page,
+      limit,
+    })
   } catch (err) {
-    return NextResponse.json({ error: "Server error" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Server error" },
+      { status: 500 }
+    )
   }
 }
 
@@ -110,6 +115,13 @@ export async function PUT(req: Request) {
 export async function DELETE(req: Request) {
   const { searchParams } = new URL(req.url)
   const id = searchParams.get("id")
+
+  if (!id) {
+    return NextResponse.json(
+      { error: "id required" },
+      { status: 400 }
+    )
+  }
 
   const { error } = await supabase
     .from("transactions")

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { supabase } from "@/lib/supabase"
 
 export default function Transactions() {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [transactions, setTransactions] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
 
@@ -17,6 +18,11 @@ export default function Transactions() {
   const [min, setMin] = useState("")
   const [max, setMax] = useState("")
 
+  // pagination
+  const [page, setPage] = useState(1)
+  const [limit] = useState(20)
+  const [total, setTotal] = useState(0)
+
   // modal
   const [open, setOpen] = useState(false)
   const [editId, setEditId] = useState<string | null>(null)
@@ -28,7 +34,8 @@ export default function Transactions() {
     transaction_date: "",
   })
 
-  // 👉 current month helper
+  const totalPages = Math.ceil(total / limit)
+
   const getCurrentMonthRange = () => {
     const now = new Date()
 
@@ -43,7 +50,6 @@ export default function Transactions() {
     return { start, end }
   }
 
-  // 🚀 INIT (default = current month)
   useEffect(() => {
     const init = async () => {
       const { data } = await supabase.auth.getUser()
@@ -55,7 +61,8 @@ export default function Transactions() {
         setFrom(start)
         setTo(end)
 
-        fetchData(data.user.id, start, end)
+        // eslint-disable-next-line react-hooks/immutability
+        fetchData(data.user.id, 1, start, end)
       }
     }
 
@@ -64,6 +71,7 @@ export default function Transactions() {
 
   const fetchData = async (
     uid?: string,
+    customPage?: number,
     customFrom?: string,
     customTo?: string
   ) => {
@@ -74,6 +82,8 @@ export default function Transactions() {
 
     const params = new URLSearchParams({
       user_id: id,
+      page: String(customPage || page),
+      limit: String(limit),
       ...(type && { type }),
       ...(search && { search }),
       ...(customFrom || from ? { from: customFrom || from } : {}),
@@ -83,18 +93,20 @@ export default function Transactions() {
     })
 
     const res = await fetch(`/api/dashboard/transactions?${params}`)
-    const data = await res.json()
+    const result = await res.json()
 
-    setTransactions(data)
+    setTransactions(result.data || [])
+    setTotal(result.total || 0)
     setLoading(false)
   }
 
   // 🔍 SEARCH
   const handleSearch = () => {
-    fetchData()
+    setPage(1)
+    fetchData(userId, 1)
   }
 
-  // 🔄 RESET → буцаад current month
+  // 🔄 RESET
   const handleReset = () => {
     const { start, end } = getCurrentMonthRange()
 
@@ -104,8 +116,9 @@ export default function Transactions() {
     setMax("")
     setFrom(start)
     setTo(end)
+    setPage(1)
 
-    fetchData(userId, start, end)
+    fetchData(userId, 1, start, end)
   }
 
   // ➕ ADD / EDIT
@@ -141,7 +154,7 @@ export default function Transactions() {
     fetchData()
   }
 
-  // ✏️ EDIT
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleEdit = (t: any) => {
     setEditId(t.id)
     setForm({
@@ -153,7 +166,6 @@ export default function Transactions() {
     setOpen(true)
   }
 
-  // 🗑 DELETE
   const handleDelete = async (id: string) => {
     if (!confirm("Устгах уу?")) return
 
@@ -162,6 +174,12 @@ export default function Transactions() {
     })
 
     fetchData()
+  }
+
+  // 👉 PAGE CHANGE
+  const goToPage = (p: number) => {
+    setPage(p)
+    fetchData(userId, p)
   }
 
   return (
@@ -199,10 +217,7 @@ export default function Transactions() {
             Reset
           </button>
 
-          <button
-            onClick={() => setOpen(true)}
-            className="ml-auto bg-green-600 text-white px-4 py-2 rounded"
-          >
+          <button onClick={() => setOpen(true)} className="ml-auto bg-green-600 text-white px-4 py-2 rounded">
             + Add
           </button>
         </div>
@@ -213,32 +228,59 @@ export default function Transactions() {
       <div className="bg-white/60 p-4 rounded-xl">
 
         {loading ? "Loading..." : (
-          <table className="w-full">
-            <thead>
-              <tr className="text-left border-b">
-                <th>Огноо</th>
-                <th>Төрөл</th>
-                <th>Дүн</th>
-                <th>Note</th>
-                <th></th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {transactions.map((t) => (
-                <tr key={t.id} className="border-b">
-                  <td>{new Date(t.transaction_date).toLocaleDateString()}</td>
-                  <td>{t.type}</td>
-                  <td>₮{t.amount.toLocaleString()}</td>
-                  <td>{t.note}</td>
-                  <td className="flex gap-2">
-                    <button onClick={() => handleEdit(t)} className="text-blue-500">Edit</button>
-                    <button onClick={() => handleDelete(t.id)} className="text-red-500">Delete</button>
-                  </td>
+          <>
+            <table className="w-full">
+              <thead>
+                <tr className="text-left border-b">
+                  <th>Огноо</th>
+                  <th>Төрөл</th>
+                  <th>Дүн</th>
+                  <th>Note</th>
+                  <th></th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+
+              <tbody>
+                {transactions.map((t) => (
+                  <tr key={t.id} className="border-b">
+                    <td>{new Date(t.transaction_date).toLocaleDateString()}</td>
+                    <td>{t.type}</td>
+                    <td>₮{t.amount.toLocaleString()}</td>
+                    <td>{t.note}</td>
+                    <td className="flex gap-2">
+                      <button onClick={() => handleEdit(t)} className="text-blue-500">Edit</button>
+                      <button onClick={() => handleDelete(t.id)} className="text-red-500">Delete</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* PAGINATION */}
+            <div className="flex justify-between items-center mt-4">
+
+              <button
+                disabled={page === 1}
+                onClick={() => goToPage(page - 1)}
+                className="border px-3 py-1 rounded"
+              >
+                Prev
+              </button>
+
+              <span className="text-sm">
+                {page} / {totalPages}
+              </span>
+
+              <button
+                disabled={page === totalPages}
+                onClick={() => goToPage(page + 1)}
+                className="border px-3 py-1 rounded"
+              >
+                Next
+              </button>
+
+            </div>
+          </>
         )}
 
       </div>

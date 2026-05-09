@@ -9,7 +9,9 @@ import {
   LayoutDashboard,
   Users,
   BarChart3,
-  Settings
+  Settings,
+  BarChart4Icon,
+  CoinsIcon
 } from "lucide-react"
 
 export default function DashboardLayout({
@@ -46,6 +48,11 @@ export default function DashboardLayout({
       name: "Dashboard",
       href: "/dashboard",
       icon: LayoutDashboard,
+    },
+    {
+      name: "Transactions",
+      href: "/dashboard/transactions",
+      icon: CoinsIcon,
     },
     {
       name: "Customers",

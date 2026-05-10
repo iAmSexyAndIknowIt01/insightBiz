@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import { useEffect, useState } from "react"
@@ -18,12 +17,15 @@ import {
 export default function Dashboard() {
   const router = useRouter()
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [user, setUser] = useState<any>(null)
+  const [companyId, setCompanyId] = useState<string | null>(null)
+
   const [monthlyIncome, setMonthlyIncome] = useState(0)
   const [lastMonthIncome, setLastMonthIncome] = useState(0)
   const [growth, setGrowth] = useState(0)
   const [customerCount, setCustomerCount] = useState(0)
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [chartData, setChartData] = useState<any[]>([])
 
   useEffect(() => {
@@ -37,17 +39,32 @@ export default function Dashboard() {
 
       setUser(data.user)
 
+      // 🔥 session-ээс авах
+      const cId = sessionStorage.getItem("company_id")
+
+      if (!cId) {
+        console.error("company_id session-д алга")
+        router.push("/login")
+        return
+      }
+
+      console.log("✅ session company_id:", cId)
+
+      setCompanyId(cId)
+
       // eslint-disable-next-line react-hooks/immutability
-      await fetchIncome(data.user.id)
+      await fetchIncome(cId)
       // eslint-disable-next-line react-hooks/immutability
-      await fetchCustomerCount(data.user.id)
+      await fetchCustomerCount(cId)
     }
 
     init()
   }, [router])
 
-  // 💰 INCOME + 6 MONTH CHART
-  const fetchIncome = async (userId: string) => {
+  // =========================
+  // 💰 INCOME (COMPANY BASED)
+  // =========================
+  const fetchIncome = async (companyId: string) => {
     const now = new Date()
 
     const sixMonthsAgo = new Date(
@@ -56,14 +73,18 @@ export default function Dashboard() {
       1
     )
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("transactions")
       .select("amount, type, transaction_date")
-      .eq("user_id", userId)
+      .eq("company_id", companyId)
       .gte("transaction_date", sixMonthsAgo.toISOString())
       .lte("transaction_date", now.toISOString())
 
-    // 👉 GROUP BY MONTH
+    if (error) {
+      console.error(error)
+      return
+    }
+
     const grouped: Record<
       string,
       { income: number; expense: number }
@@ -84,12 +105,10 @@ export default function Dashboard() {
       }
     })
 
-    // 👉 SORT + FORMAT
     const chartArr = Object.keys(grouped)
       .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
       .map((key) => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const [year, month] = key.split("-")
+        const [, month] = key.split("-")
 
         return {
           month: `${month} сар`,
@@ -100,7 +119,6 @@ export default function Dashboard() {
 
     setChartData(chartArr)
 
-    // 👉 CURRENT vs LAST MONTH
     const currentKey = `${now.getFullYear()}-${now.getMonth() + 1}`
     const lastDate = new Date(now.getFullYear(), now.getMonth() - 1)
     const lastKey = `${lastDate.getFullYear()}-${lastDate.getMonth() + 1}`
@@ -119,12 +137,19 @@ export default function Dashboard() {
     }
   }
 
-  // 👥 CUSTOMER COUNT
-  const fetchCustomerCount = async (userId: string) => {
-    const { count } = await supabase
+  // =========================
+  // 👥 CUSTOMER COUNT (COMPANY BASED)
+  // =========================
+  const fetchCustomerCount = async (companyId: string) => {
+    const { count, error } = await supabase
       .from("customers")
       .select("*", { count: "exact", head: true })
-      .eq("user_id", userId)
+      .eq("company_id", companyId)
+
+    if (error) {
+      console.error(error)
+      return
+    }
 
     if (count !== null) {
       setCustomerCount(count)
@@ -143,10 +168,6 @@ export default function Dashboard() {
               {user?.email}
             </p>
           </div>
-
-          <div className="px-4 py-2 bg-white/70 backdrop-blur border rounded-xl text-sm shadow-sm">
-            Free Plan
-          </div>
         </div>
 
         {/* STATS */}
@@ -164,101 +185,32 @@ export default function Dashboard() {
             <p className="text-3xl font-bold mt-2">
               ₮{monthlyIncome.toLocaleString("mn-MN")}
             </p>
-
-            <p className="text-xs text-gray-400 mt-2">
-              Өмнөх сар: ₮{lastMonthIncome.toLocaleString("mn-MN")}
-            </p>
           </div>
 
           <div className="p-6 rounded-2xl bg-white/60 border shadow">
             <p className="text-gray-500 text-sm">Өсөлт</p>
-
-            <p
-              className={`text-3xl font-bold mt-2 ${
-                growth >= 0 ? "text-green-500" : "text-red-500"
-              }`}
-            >
-              {growth >= 0 ? "+" : ""}
-              {growth}%
-            </p>
-
-            <p className="text-xs text-gray-400 mt-2">
-              vs өнгөрсөн сар
+            <p className={`text-3xl font-bold mt-2 ${
+              growth >= 0 ? "text-green-500" : "text-red-500"
+            }`}>
+              {growth >= 0 ? "+" : ""}{growth}%
             </p>
           </div>
 
         </div>
 
-        {/* 📊 CHART (6 MONTH) */}
-        <div className="bg-white/60 backdrop-blur border p-6 rounded-2xl shadow mb-10">
-          <h2 className="font-semibold mb-4">
-            Сүүлийн 6 сарын орлого / зарлага
-          </h2>
-
+        {/* CHART */}
+        <div className="bg-white/60 border p-6 rounded-2xl shadow">
           <div className="h-72">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={chartData}>
-
-                <defs>
-                  <linearGradient id="income" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#22c55e" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#22c55e" stopOpacity={0}/>
-                  </linearGradient>
-
-                  <linearGradient id="expense" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-
+                <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="month" />
                 <YAxis />
-
-                <Tooltip
-                  formatter={(value: any) =>
-                    `₮${Number(value).toLocaleString()}`
-                  }
-                />
-
-                {/* INCOME */}
-                <Area
-                  type="monotone"
-                  dataKey="income"
-                  stroke="#22c55e"
-                  fill="url(#income)"
-                  strokeWidth={3}
-                />
-
-                {/* EXPENSE */}
-                <Area
-                  type="monotone"
-                  dataKey="expense"
-                  stroke="#ef4444"
-                  fill="url(#expense)"
-                  strokeWidth={3}
-                />
-
+                <Tooltip />
+                <Area type="monotone" dataKey="income" stroke="#22c55e" />
+                <Area type="monotone" dataKey="expense" stroke="#ef4444" />
               </AreaChart>
             </ResponsiveContainer>
-          </div>
-        </div>
-
-        {/* ACTIVITY */}
-        <div className="bg-white/60 backdrop-blur border p-6 rounded-2xl shadow">
-          <h2 className="font-semibold mb-4">Сүүлийн үйлдлүүд</h2>
-
-          <div className="space-y-4">
-            <div className="flex justify-between">
-              <span>Шинэ хэрэглэгч бүртгэгдлээ</span>
-              <span className="text-gray-400 text-sm">2 мин</span>
-            </div>
-
-            <div className="flex justify-between">
-              <span>Орлого нэмэгдлээ</span>
-              <span className="text-gray-400 text-sm">10 мин</span>
-            </div>
           </div>
         </div>
 

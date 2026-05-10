@@ -14,56 +14,92 @@ export default function AuthForm({ type }: Props) {
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+
+  const [mode, setMode] = useState<"user" | "company">("user")
+
+  const [companyName, setCompanyName] = useState("")
+  const [companyCode, setCompanyCode] = useState("")
+
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
+  const validate = () => {
+    if (!email.includes("@")) return "Имэйл буруу байна"
+    if (password.length < 6) return "Нууц үг хамгийн багадаа 6 тэмдэгт"
+
+    if (!isLogin) {
+      if (mode === "company" && !companyName.trim()) {
+        return "Компанийн нэр оруулна уу"
+      }
+
+      if (mode === "user") {
+        if (!companyCode) return "Company code оруулна уу"
+        if (companyCode.length !== 5)
+          return "Company code 5 оронтой байх ёстой"
+      }
+    }
+
+    return ""
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+
+    const validationError = validate()
+    if (validationError) {
+      setError(validationError)
+      return
+    }
+
     setLoading(true)
     setError("")
 
     try {
+      // ======================
+      // 🔐 LOGIN
+      // ======================
       if (isLogin) {
-        // 🔐 LOGIN
-        const { error: loginError } = await supabase.auth.signInWithPassword({
+        const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
         })
 
-        if (loginError) throw loginError
+        if (error) throw error
 
-        // 👇 USER ID авах
-        const { data: userData } = await supabase.auth.getUser()
-        const userId = userData.user?.id
-
-        // 👇 SESSION-д хадгалах
-        if (userId) {
-          sessionStorage.setItem("user_id", userId)
-          console.log("User ID saved to sessionStorage:", userId)
-        }
-
-        // 👇 MODE шалгах
-        const mode = sessionStorage.getItem("mode")
-
-        if (mode === "client") {
-          sessionStorage.removeItem("mode")
-          router.push("/client")
-        } else {
-          router.push("/dashboard")
-        }
-
-      } else {
-        // 📝 REGISTER
-        const { error: registerError } = await supabase.auth.signUp({
-          email,
-          password,
-        })
-
-        if (registerError) throw registerError
-
-        alert("Бүртгэл амжилттай! Email баталгаажуулна уу.")
-        router.push("/login")
+        router.push("/dashboard")
+        return
       }
+
+      // ======================
+      // 📝 REGISTER
+      // ======================
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email,
+          password,
+          mode,
+          company_name: companyName,
+          company_code: companyCode,
+        }),
+      })
+
+      const data = await res.json()
+
+      if (!res.ok) throw new Error(data.error)
+
+      if (mode === "company") {
+        alert(
+          `🎉 Компани амжилттай бүртгэгдлээ!\n\nТаны код: ${data.company_code}`
+        )
+      } else {
+        alert("🎉 Амжилттай бүртгэгдлээ!")
+      }
+
+      router.push("/login")
 
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Алдаа гарлаа")
@@ -82,6 +118,61 @@ export default function AuthForm({ type }: Props) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
 
+          {/* MODE */}
+          {!isLogin && (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("user")
+                  setError("")
+                }}
+                className={`flex-1 p-2 border rounded ${
+                  mode === "user" ? "bg-indigo-600 text-white" : ""
+                }`}
+              >
+                👤 User
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMode("company")
+                  setError("")
+                }}
+                className={`flex-1 p-2 border rounded ${
+                  mode === "company" ? "bg-indigo-600 text-white" : ""
+                }`}
+              >
+                🏢 Company
+              </button>
+            </div>
+          )}
+
+          {/* COMPANY NAME */}
+          {!isLogin && mode === "company" && (
+            <input
+              placeholder="Компанийн нэр"
+              value={companyName}
+              onChange={(e) => setCompanyName(e.target.value)}
+              className="w-full px-4 py-3 border rounded-xl"
+            />
+          )}
+
+          {/* COMPANY CODE */}
+          {!isLogin && mode === "user" && (
+            <input
+              placeholder="Company code (5 оронтой)"
+              value={companyCode}
+              onChange={(e) =>
+                setCompanyCode(e.target.value.replace(/\D/g, ""))
+              }
+              maxLength={5}
+              className="w-full px-4 py-3 border rounded-xl"
+            />
+          )}
+
+          {/* EMAIL */}
           <input
             type="email"
             placeholder="Имэйл"
@@ -91,6 +182,7 @@ export default function AuthForm({ type }: Props) {
             required
           />
 
+          {/* PASSWORD */}
           <input
             type="password"
             placeholder="Нууц үг"
@@ -101,29 +193,22 @@ export default function AuthForm({ type }: Props) {
           />
 
           {error && (
-            <p className="text-red-500 text-sm">{error}</p>
+            <p className="text-red-500 text-sm text-center">{error}</p>
           )}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-indigo-600 text-white py-3 rounded-xl"
+            className="w-full bg-indigo-600 text-white py-3 rounded-xl disabled:opacity-50"
           >
-            {loading ? "Түр хүлээнэ үү..." : isLogin ? "Нэвтрэх" : "Бүртгүүлэх"}
+            {loading
+              ? "Түр хүлээнэ үү..."
+              : isLogin
+              ? "Нэвтрэх"
+              : "Бүртгүүлэх"}
           </button>
 
         </form>
-
-        <p className="text-center text-sm text-gray-500 mt-6">
-          {isLogin ? "Бүртгэлгүй юу?" : "Аль хэдийн бүртгэлтэй юу?"}{" "}
-          <a
-            href={isLogin ? "/register" : "/login"}
-            className="text-indigo-600"
-          >
-            {isLogin ? "Бүртгүүлэх" : "Нэвтрэх"}
-          </a>
-        </p>
-
       </div>
     </div>
   )

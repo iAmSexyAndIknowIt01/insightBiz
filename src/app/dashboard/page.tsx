@@ -37,7 +37,9 @@ export default function Dashboard() {
 
       setUser(data.user)
 
+      // eslint-disable-next-line react-hooks/immutability
       await fetchIncome(data.user.id)
+      // eslint-disable-next-line react-hooks/immutability
       await fetchCustomerCount(data.user.id)
     }
 
@@ -86,6 +88,7 @@ export default function Dashboard() {
     const chartArr = Object.keys(grouped)
       .sort((a, b) => new Date(a).getTime() - new Date(b).getTime())
       .map((key) => {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const [year, month] = key.split("-")
 
         return {

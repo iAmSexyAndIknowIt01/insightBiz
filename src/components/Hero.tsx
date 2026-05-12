@@ -1,51 +1,68 @@
 "use client"
-import { motion } from "framer-motion"
 
 export default function Hero() {
+  // 👉 dummy logos (дараа нь real logo image сольж болно)
+  const logos = [
+    "Google",
+    "Amazon",
+    "Meta",
+    "Netflix",
+    "Apple",
+    "Tesla",
+    "Stripe",
+    "Shopify",
+  ]
+
   return (
-    <section className="text-center py-32 px-6 relative overflow-hidden">
+    <section className="pt-40 pb-32 px-6 text-center relative overflow-hidden">
 
-      <motion.h1
-        initial={{ opacity: 0, y: 40 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-5xl md:text-6xl font-bold mb-6 leading-tight"
-      >
-        Таны бизнесийн
-        <span className="text-indigo-600"> өгөгдөл </span>
-        таны өсөлтийн түлхүүр
-      </motion.h1>
+      {/* background glow */}
+      <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-indigo-400 opacity-20 blur-[200px]" />
 
+      {/* TITLE */}
+      <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6">
+        Data ашиглан
+        <br />
+        <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+          бизнесээ өсгө
+        </span>
+      </h1>
+
+      {/* DESC */}
       <p className="text-gray-600 max-w-xl mx-auto mb-10 text-lg">
-        InsightBiz ашиглан хэрэглэгчдийн зан төлөвийг ойлгож,
-        илүү ухаалаг шийдвэр гаргаж орлогоо өсгө
+        InsightBiz ашиглан бизнесийн шийдвэрээ дата дээр суурилуул
       </p>
 
-      <div className="flex justify-center gap-4 flex-wrap">
-        <button className="bg-indigo-600 text-white px-8 py-4 rounded-xl glow-light">
-          Үнэгүй эхлэх
+      {/* CTA */}
+      <div className="flex justify-center gap-4 flex-wrap mb-16">
+        <button className="bg-indigo-600 text-white px-8 py-4 rounded-xl shadow-xl hover:scale-105 transition">
+          🚀 Үнэгүй эхлэх
         </button>
 
-        <button className="border px-8 py-4 rounded-xl">
-          Demo үзэх
+        <button className="border px-8 py-4 rounded-xl hover:bg-gray-100 transition">
+          ▶ Demo үзэх
         </button>
       </div>
 
-      {/* Dashboard preview */}
-      <div className="mt-20 max-w-4xl mx-auto glass-light p-6 rounded-2xl shadow-lg">
-        <div className="grid grid-cols-3 gap-4">
-          <div className="p-4 bg-white rounded-xl">
-            <p className="text-gray-500 text-sm">Customers</p>
-            <p className="text-2xl font-bold">1,240</p>
-          </div>
-          <div className="p-4 bg-white rounded-xl">
-            <p className="text-gray-500 text-sm">Revenue</p>
-            <p className="text-2xl font-bold">₮8.2M</p>
-          </div>
-          <div className="p-4 bg-white rounded-xl">
-            <p className="text-gray-500 text-sm">Growth</p>
-            <p className="text-2xl font-bold text-green-500">+22%</p>
-          </div>
+      {/* 🔥 LOGO CAROUSEL */}
+      <div className="relative overflow-hidden">
+
+        {/* fade edges */}
+        <div className="absolute left-0 top-0 h-full w-24 bg-gradient-to-r from-white to-transparent z-10" />
+        <div className="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-white to-transparent z-10" />
+
+        <div className="flex gap-10 animate-scroll whitespace-nowrap">
+          {/* double render for infinite loop */}
+          {[...logos, ...logos].map((logo, i) => (
+            <div
+              key={i}
+              className="px-6 py-3 bg-white rounded-xl shadow text-gray-700 font-semibold"
+            >
+              {logo}
+            </div>
+          ))}
         </div>
+
       </div>
 
     </section>

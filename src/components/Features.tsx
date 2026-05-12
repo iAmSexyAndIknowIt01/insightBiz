@@ -3,24 +3,25 @@ import { motion } from "framer-motion"
 
 const features = [
   {
-    title: "Хэрэглэгчээ ойлго",
-    desc: "Хэн хамгийн их үйлчлүүлж байгааг мэд",
+    title: "📊 Data Analytics",
+    desc: "Орлого, хэрэглэгч, өсөлтийг realtime хар",
   },
   {
-    title: "Орлогоо өсгө",
-    desc: "Зөв үед хямдрал зарла",
+    title: "🎯 Smart Decision",
+    desc: "Дата дээр суурилсан шийдвэр гарга",
   },
   {
-    title: "Шийдвэрээ сайжруул",
-    desc: "Дата дээр суурилсан сонголт хий",
+    title: "💰 Revenue Growth",
+    desc: "Орлогоо тогтвортой өсгө",
   },
 ]
 
 export default function Features() {
   return (
-    <section id="features" className="py-24 px-6">
+    <section className="py-28 px-6">
+
       <h2 className="text-4xl font-bold text-center mb-16">
-        Танд ямар ашигтай вэ?
+        Яагаад InsightBiz вэ?
       </h2>
 
       <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
@@ -28,13 +29,17 @@ export default function Features() {
           <motion.div
             key={i}
             whileHover={{ scale: 1.05 }}
-            className="glass-light p-6 rounded-2xl"
+            initial={{ opacity: 0, y: 50 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.2 }}
+            className="bg-white/70 backdrop-blur-xl p-8 rounded-2xl shadow-lg border"
           >
             <h3 className="text-xl font-semibold mb-2">{f.title}</h3>
             <p className="text-gray-600">{f.desc}</p>
           </motion.div>
         ))}
       </div>
+
     </section>
   )
 }

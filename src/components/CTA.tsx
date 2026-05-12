@@ -19,7 +19,7 @@ export default function CTA() {
 
       <motion.button
         whileHover={{ scale: 1.05 }}
-        className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-10 py-4 rounded-xl shadow-xl"
+        className="bg-linear-to-r from-indigo-600 to-purple-600 text-white px-10 py-4 rounded-xl shadow-xl"
       >
         Үнэгүй эхлэх
       </motion.button>

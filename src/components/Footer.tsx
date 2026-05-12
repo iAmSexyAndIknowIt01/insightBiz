@@ -9,12 +9,12 @@ export default function Footer() {
     <footer className="relative mt-32">
 
       {/* 🔥 BACKGROUND GLOW */}
-      <div className="absolute inset-0 bg-gradient-to-tr from-indigo-100 via-white to-purple-100 opacity-70 blur-3xl" />
+      <div className="absolute inset-0 bg-linear-to-tr from-indigo-100 via-white to-purple-100 opacity-70 blur-3xl" />
 
       <div className="relative max-w-7xl mx-auto px-6">
 
         {/* 🚀 CTA BOX */}
-        <div className="mb-16 rounded-3xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-10 md:p-14 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
+        <div className="mb-16 rounded-3xl bg-linear-to-r from-indigo-600 to-purple-600 text-white p-10 md:p-14 shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
 
           <div>
             <h2 className="text-3xl md:text-4xl font-bold mb-2">
@@ -38,7 +38,7 @@ export default function Footer() {
 
           {/* BRAND */}
           <div>
-            <h2 className="text-xl font-bold mb-4 bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            <h2 className="text-xl font-bold mb-4 bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
               InsightBiz
             </h2>
             <p className="text-gray-600 text-sm leading-relaxed">

@@ -31,3 +31,7 @@ body {
 .animate-scroll {
   animation: scroll 25s linear infinite;
 }
+
+.input {
+  @apply w-full px-4 py-3 rounded-xl border border-gray-200 bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition;
+}

@@ -52,9 +52,6 @@ export default function AuthForm({ type }: Props) {
     setError("")
 
     try {
-      // ======================
-      // 🔐 LOGIN
-      // ======================
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
           email,
@@ -63,7 +60,6 @@ export default function AuthForm({ type }: Props) {
 
         if (error) throw error
 
-        // 👉 user авах
         const { data: userData } = await supabase.auth.getUser()
 
         if (!userData.user) {
@@ -72,7 +68,6 @@ export default function AuthForm({ type }: Props) {
 
         const userId = userData.user.id
 
-        // 👉 API дуудах (user_id дамжуулна)
         const res = await fetch("/api/auth/session", {
           method: "POST",
           headers: {
@@ -84,11 +79,9 @@ export default function AuthForm({ type }: Props) {
         const data = await res.json()
         if (!res.ok) throw new Error(data.error)
 
-        // 🔥 LOG (хадгалахаас өмнө)
         console.log("✅ user_id:", data.user_id)
         console.log("✅ company_id:", data.company_id)
 
-        // 👉 session хадгалах
         sessionStorage.setItem("user_id", data.user_id)
         sessionStorage.setItem("company_id", data.company_id)
 
@@ -96,9 +89,6 @@ export default function AuthForm({ type }: Props) {
         return
       }
 
-      // ======================
-      // 📝 REGISTER
-      // ======================
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
@@ -132,78 +122,124 @@ export default function AuthForm({ type }: Props) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6">
-      <div className="w-full max-w-md p-8 rounded-2xl shadow-lg bg-white">
+    <div className="min-h-screen flex items-center justify-center px-6 bg-linear-to-br from-indigo-50 via-white to-purple-50">
 
-        <h2 className="text-2xl font-bold mb-6 text-center">
-          {isLogin ? "Нэвтрэх" : "Бүртгүүлэх"}
-        </h2>
+      <div className="w-full max-w-md">
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-
-          {!isLogin && (
-            <div className="flex gap-2">
-              <button type="button" onClick={() => setMode("user")}
-                className={`flex-1 p-2 border rounded ${mode === "user" ? "bg-indigo-600 text-white" : ""}`}>
-                👤 User
-              </button>
-
-              <button type="button" onClick={() => setMode("company")}
-                className={`flex-1 p-2 border rounded ${mode === "company" ? "bg-indigo-600 text-white" : ""}`}>
-                🏢 Company
-              </button>
-            </div>
-          )}
-
-          {!isLogin && mode === "company" && (
-            <input
-              placeholder="Компанийн нэр"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              className="w-full px-4 py-3 border rounded-xl"
-            />
-          )}
-
-          {!isLogin && mode === "user" && (
-            <input
-              placeholder="Company code"
-              value={companyCode}
-              onChange={(e) =>
-                setCompanyCode(e.target.value.replace(/\D/g, ""))
-              }
-              maxLength={5}
-              className="w-full px-4 py-3 border rounded-xl"
-            />
-          )}
-
-          <input
-            type="email"
-            placeholder="Имэйл"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full px-4 py-3 border rounded-xl"
-          />
-
-          <input
-            type="password"
-            placeholder="Нууц үг"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full px-4 py-3 border rounded-xl"
-          />
-
-          {error && (
-            <p className="text-red-500 text-sm text-center">{error}</p>
-          )}
-
-          <button
-            disabled={loading}
-            className="w-full bg-indigo-600 text-white py-3 rounded-xl"
+        {/* 🔥 LOGO (CLICKABLE) */}
+        <div className="text-center mb-8">
+          <h1
+            onClick={() => router.push("/")}
+            className="text-3xl font-extrabold cursor-pointer bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent hover:scale-105 transition"
           >
-            {loading ? "Түр хүлээнэ үү..." : isLogin ? "Нэвтрэх" : "Бүртгүүлэх"}
-          </button>
+            InsightBiz
+          </h1>
+          <p className="text-sm text-gray-500 mt-2">
+            {isLogin ? "Системд нэвтрэх" : "Шинэ бүртгэл үүсгэх"}
+          </p>
+        </div>
 
-        </form>
+        {/* CARD */}
+        <div className="bg-white/80 backdrop-blur-xl border border-white/40 shadow-xl rounded-3xl p-8 space-y-5">
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+
+            {!isLogin && (
+              <div className="flex gap-2 bg-gray-100 p-1 rounded-xl">
+                <button
+                  type="button"
+                  onClick={() => setMode("user")}
+                  className={`flex-1 py-2 rounded-lg text-sm transition ${
+                    mode === "user"
+                      ? "bg-white shadow font-medium"
+                      : "text-gray-500"
+                  }`}
+                >
+                  👤 User
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setMode("company")}
+                  className={`flex-1 py-2 rounded-lg text-sm transition ${
+                    mode === "company"
+                      ? "bg-white shadow font-medium"
+                      : "text-gray-500"
+                  }`}
+                >
+                  🏢 Company
+                </button>
+              </div>
+            )}
+
+            {!isLogin && mode === "company" && (
+              <input
+                placeholder="Компанийн нэр"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                className="input"
+              />
+            )}
+
+            {!isLogin && mode === "user" && (
+              <input
+                placeholder="Company code"
+                value={companyCode}
+                onChange={(e) =>
+                  setCompanyCode(e.target.value.replace(/\D/g, ""))
+                }
+                maxLength={5}
+                className="input"
+              />
+            )}
+
+            <input
+              type="email"
+              placeholder="Имэйл"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="input"
+            />
+
+            <input
+              type="password"
+              placeholder="Нууц үг"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="input"
+            />
+
+            {error && (
+              <p className="text-red-500 text-sm text-center">{error}</p>
+            )}
+
+            <button
+              disabled={loading}
+              className="w-full py-3 rounded-xl text-white font-semibold bg-linear-to-r from-indigo-600 to-purple-600 hover:scale-[1.02] transition shadow-md"
+            >
+              {loading
+                ? "Түр хүлээнэ үү..."
+                : isLogin
+                ? "Нэвтрэх"
+                : "Бүртгүүлэх"}
+            </button>
+
+          </form>
+
+          {/* SWITCH */}
+          <p className="text-sm text-center text-gray-500">
+            {isLogin ? "Бүртгэлгүй юу?" : "Бүртгэлтэй юу?"}{" "}
+            <span
+              onClick={() =>
+                router.push(isLogin ? "/register" : "/login")
+              }
+              className="text-indigo-600 font-medium cursor-pointer hover:underline"
+            >
+              {isLogin ? "Бүртгүүлэх" : "Нэвтрэх"}
+            </span>
+          </p>
+
+        </div>
       </div>
     </div>
   )

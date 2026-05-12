@@ -17,13 +17,13 @@ export default function Hero() {
     <section className="pt-40 pb-32 px-6 text-center relative overflow-hidden">
 
       {/* background glow */}
-      <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[800px] h-[800px] bg-indigo-400 opacity-20 blur-[200px]" />
+      <div className="absolute -top-25 left-1/2 -translate-x-1/2 w-200 h-200 bg-indigo-400 opacity-20 blur-[200px]" />
 
       {/* TITLE */}
       <h1 className="text-5xl md:text-7xl font-bold leading-tight mb-6">
         Data ашиглан
         <br />
-        <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+        <span className="bg-linear-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
           бизнесээ өсгө
         </span>
       </h1>
@@ -48,8 +48,8 @@ export default function Hero() {
       <div className="relative overflow-hidden">
 
         {/* fade edges */}
-        <div className="absolute left-0 top-0 h-full w-24 bg-gradient-to-r from-white to-transparent z-10" />
-        <div className="absolute right-0 top-0 h-full w-24 bg-gradient-to-l from-white to-transparent z-10" />
+        <div className="absolute left-0 top-0 h-full w-24 bg-linear-to-r from-white to-transparent z-10" />
+        <div className="absolute right-0 top-0 h-full w-24 bg-linear-to-l from-white to-transparent z-10" />
 
         <div className="flex gap-10 animate-scroll whitespace-nowrap">
           {/* double render for infinite loop */}

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import InvoiceModal from "@/components/InvoiceModal"
 
 type Invoice = {
   id: string
@@ -12,6 +13,7 @@ type Invoice = {
 
 export default function InvoicePage() {
   const [invoices, setInvoices] = useState<Invoice[]>([])
+  const [open, setOpen] = useState(false)
 
   useEffect(() => {
     // 🔥 dummy data (дараа нь API-р солино)
@@ -39,7 +41,10 @@ export default function InvoicePage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Invoices</h1>
 
-        <button className="bg-indigo-600 text-white px-4 py-2 rounded-xl">
+        <button
+          onClick={() => setOpen(true)}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-xl"
+        >
           + Invoice нэмэх
         </button>
       </div>
@@ -83,7 +88,11 @@ export default function InvoicePage() {
         </table>
 
       </div>
-
+      <InvoiceModal
+        open={open}
+        onClose={() => setOpen(false)}
+        onCreated={() => location.reload()}
+      />
     </div>
   )
 }

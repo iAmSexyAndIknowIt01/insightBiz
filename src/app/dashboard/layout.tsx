@@ -78,7 +78,7 @@ export default function DashboardLayout({
   ]
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50">
+    <div className="flex min-h-screen bg-linear-to-br from-indigo-50 via-white to-purple-50">
 
       {/* SIDEBAR */}
       <aside

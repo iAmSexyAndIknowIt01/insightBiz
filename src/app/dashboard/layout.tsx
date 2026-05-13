@@ -11,7 +11,8 @@ import {
   BarChart3,
   Settings,
   BarChart4Icon,
-  CoinsIcon
+  CoinsIcon,
+  FileText
 } from "lucide-react"
 
 export default function DashboardLayout({
@@ -69,6 +70,11 @@ export default function DashboardLayout({
       href: "/dashboard/settings",
       icon: Settings,
     },
+    {
+      name: "Invoices",
+      href: "/dashboard/invoices",
+      icon: FileText,
+    }
   ]
 
   return (

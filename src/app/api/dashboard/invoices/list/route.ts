@@ -1,10 +1,5 @@
+import { supabase } from "@/lib/supabase"
 import { NextResponse } from "next/server"
-import { createClient } from "@supabase/supabase-js"
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-)
 
 export async function POST(req: Request) {
   try {
@@ -17,18 +12,19 @@ export async function POST(req: Request) {
       )
     }
 
-    // 🔥 invoices + items + company JOIN
-    const { data, error } = await supabase
+    // 👉 1. Манай үүсгэсэн invoice
+    const { data: issued, error: err1 } = await supabase
       .from("invoices")
       .select(`
         id,
         total,
         status,
         created_at,
+        company_id,
+        customer_id,
         customer:mt_company (
           id,
-          name,
-          company_mail
+          name
         ),
         items:invoice_items (
           id,
@@ -38,13 +34,37 @@ export async function POST(req: Request) {
         )
       `)
       .eq("company_id", company_id)
-      .order("created_at", { ascending: false })
 
-    if (error) throw error
+    if (err1) throw err1
+
+    // 👉 2. Манай төлөх invoice
+    const { data: payable, error: err2 } = await supabase
+      .from("invoices")
+      .select(`
+        id,
+        total,
+        status,
+        created_at,
+        company_id,
+        customer_id,
+        company:mt_company (
+          id,
+          name
+        ),
+        items:invoice_items (
+          id,
+          name,
+          qty,
+          price
+        )
+      `)
+      .eq("customer_id", company_id)
+
+    if (err2) throw err2
 
     return NextResponse.json({
-      success: true,
-      invoices: data,
+      issued: issued || [],
+      payable: payable || [],
     })
 
   } catch (err: any) {

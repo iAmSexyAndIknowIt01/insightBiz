@@ -5,9 +5,11 @@ import InvoiceModal from "@/components/InvoiceModal"
 import React from "react"
 
 export default function InvoicePage() {
-  const [invoices, setInvoices] = useState<any[]>([])
+  const [issued, setIssued] = useState<any[]>([])
+  const [payable, setPayable] = useState<any[]>([])
   const [open, setOpen] = useState(false)
   const [expanded, setExpanded] = useState<string | null>(null)
+  const [tab, setTab] = useState<"issued" | "payable">("issued")
 
   // 🔥 fetch invoices
   const fetchInvoices = async () => {
@@ -26,11 +28,11 @@ export default function InvoicePage() {
 
       const data = await res.json()
 
-      console.log("📄 invoices:", data)
-
       if (!res.ok) throw new Error(data.error)
 
-      setInvoices(data.invoices || [])
+      setIssued(data.issued || [])
+      setPayable(data.payable || [])
+
     } catch (err) {
       console.error("❌ fetch invoices error:", err)
     }
@@ -40,11 +42,13 @@ export default function InvoicePage() {
     fetchInvoices()
   }, [])
 
+  const list = tab === "issued" ? issued : payable
+
   return (
-    <div>
+    <div className="space-y-6">
 
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Invoices</h1>
 
         <button
@@ -55,6 +59,31 @@ export default function InvoicePage() {
         </button>
       </div>
 
+      {/* 🔥 SWITCH */}
+      <div className="flex bg-gray-100 rounded-xl p-1 w-fit">
+        <button
+          onClick={() => setTab("issued")}
+          className={`px-4 py-2 rounded-xl text-sm transition ${
+            tab === "issued"
+              ? "bg-white shadow font-semibold"
+              : "text-gray-500"
+          }`}
+        >
+          Нэхэмжлэл
+        </button>
+
+        <button
+          onClick={() => setTab("payable")}
+          className={`px-4 py-2 rounded-xl text-sm transition ${
+            tab === "payable"
+              ? "bg-white shadow font-semibold"
+              : "text-gray-500"
+          }`}
+        >
+          Манай төлөх
+        </button>
+      </div>
+
       {/* TABLE */}
       <div className="bg-white/70 backdrop-blur border rounded-2xl shadow overflow-hidden">
 
@@ -62,7 +91,9 @@ export default function InvoicePage() {
           <thead className="bg-gray-50 text-gray-500">
             <tr>
               <th className="p-3 text-left">ID</th>
-              <th className="p-3 text-left">Customer</th>
+              <th className="p-3 text-left">
+                {tab === "issued" ? "Customer" : "From"}
+              </th>
               <th className="p-3 text-left">Amount</th>
               <th className="p-3 text-left">Status</th>
               <th className="p-3 text-left">Date</th>
@@ -70,7 +101,7 @@ export default function InvoicePage() {
           </thead>
 
           <tbody>
-            {invoices.map((inv) => (
+            {list.map((inv) => (
               <React.Fragment key={inv.id}>
 
                 <tr
@@ -82,11 +113,13 @@ export default function InvoicePage() {
                   <td className="p-3 font-medium">{inv.id}</td>
 
                   <td className="p-3">
-                    {inv.customer?.name || "-"}
+                    {tab === "issued"
+                      ? inv.customer?.name
+                      : inv.company?.name}
                   </td>
 
                   <td className="p-3">
-                    ₮{Number(inv.total).toLocaleString("mn-MN")}
+                    ₮{Number(inv.total).toLocaleString()}
                   </td>
 
                   <td className="p-3">
@@ -106,11 +139,9 @@ export default function InvoicePage() {
                   </td>
                 </tr>
 
-                {/* 🔥 EXPAND ITEMS */}
                 {expanded === inv.id && (
                   <tr className="bg-gray-50">
                     <td colSpan={5} className="p-4">
-
                       <div className="space-y-2">
                         {inv.items?.map((item: any) => (
                           <div
@@ -127,7 +158,6 @@ export default function InvoicePage() {
                           </div>
                         ))}
                       </div>
-
                     </td>
                   </tr>
                 )}
@@ -139,7 +169,6 @@ export default function InvoicePage() {
 
       </div>
 
-      {/* MODAL */}
       <InvoiceModal
         open={open}
         onClose={() => setOpen(false)}

@@ -19,6 +19,7 @@ export default function Dashboard() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [user, setUser] = useState<any>(null)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [companyId, setCompanyId] = useState<string | null>(null)
 
   const [monthlyIncome, setMonthlyIncome] = useState(0)
@@ -80,7 +81,8 @@ export default function Dashboard() {
       .gte("transaction_date", sixMonthsAgo.toISOString())
       .lte("transaction_date", now.toISOString())
 
-    if (error) {
+    console.log("✅ transactions:", data)
+      if (error) {
       console.error(error)
       return
     }
@@ -182,8 +184,14 @@ export default function Dashboard() {
 
           <div className="p-6 rounded-2xl bg-white/60 border shadow">
             <p className="text-gray-500 text-sm">Сарын орлого</p>
+
             <p className="text-3xl font-bold mt-2">
               ₮{monthlyIncome.toLocaleString("mn-MN")}
+            </p>
+
+            {/* 🔥 last month жижиг текст */}
+            <p className="text-xs text-gray-400 mt-1">
+              Өмнөх сар: ₮{lastMonthIncome.toLocaleString("mn-MN")}
             </p>
           </div>
 

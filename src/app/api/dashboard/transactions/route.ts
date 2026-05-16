@@ -66,6 +66,7 @@ export async function GET(req: Request) {
       page,
       limit,
     })
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (err) {
     return NextResponse.json(
       { error: "Server error" },

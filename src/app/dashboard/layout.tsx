@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client"
 
 import { useEffect, useState } from "react"
@@ -12,7 +11,10 @@ import {
   Settings,
   CoinsIcon,
   Clock,
-  FileText
+  FileText,
+  PlusCircle,
+  List,
+  ChevronDown
 } from "lucide-react"
 
 export default function DashboardLayout({
@@ -22,8 +24,12 @@ export default function DashboardLayout({
 }) {
   const router = useRouter()
   const pathname = usePathname()
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [user, setUser] = useState<any>(null)
   const [hovered, setHovered] = useState(false)
+
+  const [openMenu, setOpenMenu] = useState<string | null>(null)
 
   useEffect(() => {
     const checkUser = async () => {
@@ -45,46 +51,14 @@ export default function DashboardLayout({
   }
 
   const menu = [
-    {
-      name: "Dashboard",
-      href: "/dashboard",
-      icon: LayoutDashboard,
-    },
-    {
-      name: "Transactions",
-      href: "/dashboard/transactions",
-      icon: CoinsIcon,
-    },
-    {
-      name: "Customers",
-      href: "/dashboard/customers",
-      icon: Users,
-    },
-    {
-      name: "Analytics",
-      href: "/dashboard/analytics",
-      icon: BarChart3,
-    },
-    {
-      name: "Invoices",
-      href: "/dashboard/invoices",
-      icon: FileText,
-    },
-    {
-      name: "Timecard",
-      href: "/dashboard/timecard",
-      icon: Clock,
-    },
-        {
-      name: "Contracts",
-      href: "/dashboard/contracts",
-      icon: FileText,
-    },
-    {
-      name: "Settings",
-      href: "/dashboard/settings",
-      icon: Settings,
-    },
+    { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { name: "Transactions", href: "/dashboard/transactions", icon: CoinsIcon },
+    { name: "Customers", href: "/dashboard/customers", icon: Users },
+    { name: "Analytics", href: "/dashboard/analytics", icon: BarChart3 },
+    { name: "Invoices", href: "/dashboard/invoices", icon: FileText },
+    { name: "Timecard", href: "/dashboard/timecard", icon: Clock },
+    { name: "Contracts", href: "/dashboard/contracts", icon: FileText },
+    { name: "Settings", href: "/dashboard/settings", icon: Settings },
   ]
 
   return (
@@ -94,14 +68,13 @@ export default function DashboardLayout({
       <aside
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className={`m-4 rounded-2xl bg-white/80 backdrop-blur-md border border-gray-200 shadow-sm flex flex-col justify-between transition-all duration-300
+        className={`m-4 rounded-2xl bg-white/80 backdrop-blur-md border shadow-sm flex flex-col justify-between transition-all duration-300
         ${hovered ? "w-64" : "w-20"}
         `}
       >
-        {/* TOP */}
         <div className="p-4">
 
-          <h2 className={`text-xl font-bold mb-8 transition-all ${hovered ? "opacity-100" : "opacity-0 hidden"}`}>
+          <h2 className={`text-xl font-bold mb-8 ${hovered ? "" : "hidden"}`}>
             InsightBiz
           </h2>
 
@@ -110,23 +83,71 @@ export default function DashboardLayout({
               const Icon = item.icon
               const active = pathname === item.href
 
+              // 🔥 CONTRACTS DROPDOWN
+              if (item.name === "Contracts") {
+                const isOpen = openMenu === "Contracts"
+
+                return (
+                  <div key={item.name} className="relative">
+
+                    <button
+                      onClick={() =>
+                        setOpenMenu(isOpen ? null : "Contracts")
+                      }
+                      className={`w-full flex items-center justify-between p-3 rounded-xl
+                      ${active ? "bg-indigo-100 text-indigo-600" : "text-gray-600 hover:bg-gray-100"}
+                      `}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Icon size={20} />
+                        {hovered && <span>{item.name}</span>}
+                      </div>
+
+                      {hovered && (
+                        <ChevronDown
+                          size={16}
+                          className={`transition ${isOpen ? "rotate-180" : ""}`}
+                        />
+                      )}
+                    </button>
+
+                    {/* SUBMENU */}
+                    {isOpen && hovered && (
+                      <div className="ml-8 mt-1 space-y-1">
+
+                        <Link
+                          href="/dashboard/contracts/new"
+                          className="flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 text-sm"
+                        >
+                          <PlusCircle size={16} />
+                          Шинэ гэрээ
+                        </Link>
+
+                        <Link
+                          href="/dashboard/contracts"
+                          className="flex items-center gap-2 px-3 py-2 rounded hover:bg-gray-100 text-sm"
+                        >
+                          <List size={16} />
+                          Гэрээний жагсаалт
+                        </Link>
+
+                      </div>
+                    )}
+                  </div>
+                )
+              }
+
+              // 🔹 NORMAL MENU
               return (
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center gap-3 p-3 rounded-xl transition
-                    ${active ? "bg-indigo-100 text-indigo-600" : "text-gray-600 hover:bg-gray-100"}
+                  className={`flex items-center gap-3 p-3 rounded-xl
+                  ${active ? "bg-indigo-100 text-indigo-600" : "text-gray-600 hover:bg-gray-100"}
                   `}
                 >
                   <Icon size={20} />
-
-                  <span
-                    className={`transition-all whitespace-nowrap
-                      ${hovered ? "opacity-100" : "opacity-0 hidden"}
-                    `}
-                  >
-                    {item.name}
-                  </span>
+                  {hovered && <span>{item.name}</span>}
                 </Link>
               )
             })}
@@ -135,7 +156,6 @@ export default function DashboardLayout({
 
         {/* BOTTOM */}
         <div className="p-4">
-
           {hovered && (
             <p className="text-xs text-gray-500 mb-2">
               {user?.email}
@@ -144,12 +164,10 @@ export default function DashboardLayout({
 
           <button
             onClick={logout}
-            className="flex items-center gap-3 text-red-500 text-sm hover:underline"
+            className="flex items-center gap-3 text-red-500 text-sm"
           >
-            <span>⏻</span>
-            {hovered && <span>Гарах</span>}
+            ⏻ {hovered && "Гарах"}
           </button>
-
         </div>
       </aside>
 
@@ -157,7 +175,6 @@ export default function DashboardLayout({
       <main className="flex-1 p-6 max-w-7xl mx-auto w-full">
         {children}
       </main>
-
     </div>
   )
 }

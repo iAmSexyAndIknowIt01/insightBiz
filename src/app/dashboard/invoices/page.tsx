@@ -52,7 +52,9 @@ export default function InvoicePage() {
   }
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchInvoices()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const list = tab === "issued" ? issued : payable
